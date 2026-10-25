@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PHP特化型 脆弱性緊急診断 & セキュリティ対策コンサルティング</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #131c2e;
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --accent: #06b6d4;
+      --danger: #f43f5e;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.6; }
+    header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(9, 13, 22, 0.95); position: sticky; top: 0; z-index: 50; }
+    .logo { font-size: 1.15rem; font-weight: 700; color: var(--primary-light); display: flex; align-items: center; gap: 0.5rem; }
+    .hero { padding: 4.5rem 2rem 3rem; text-align: center; max-width: 860px; margin: 0 auto; }
+    .hero h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.25; margin-bottom: 1.25rem; background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 2rem; }
+    .tag { display: inline-block; background: rgba(244, 63, 94, 0.15); border: 1px solid var(--danger); color: var(--danger); font-size: 0.8rem; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 1rem; }
+    .btn { display: inline-block; background: var(--primary); color: #fff; padding: 0.75rem 1.75rem; border-radius: 0.5rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: 0.2s; }
+    .btn:hover { background: #4338ca; box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); }
+    
+    /* セルフ診断ウィジェット */
+    .diagnostic-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; max-width: 720px; margin: 2rem auto; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+    .box-title { font-size: 1.25rem; margin-bottom: 1rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+    .check-item { background: #0c1322; border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; }
+    .check-item:hover { border-color: var(--primary-light); }
+    .check-item input { margin-top: 0.25rem; }
+    .score-result { display: none; padding: 1.25rem; border-radius: 0.5rem; margin-top: 1.5rem; text-align: center; }
+    .score-high { background: rgba(244, 63, 94, 0.15); border: 1px solid var(--danger); color: var(--danger); }
+    .score-med { background: rgba(245, 158, 11, 0.15); border: 1px solid var(--warning); color: var(--warning); }
+    .score-low { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); }
+
+    .threat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem; }
+    .threat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.5rem; }
+    .threat-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; color: #fff; }
+    .threat-card p { font-size: 0.85rem; color: var(--text-muted); }
+    
+    .form-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2.5rem; max-width: 650px; margin: 3rem auto; }
+    .form-group { margin-bottom: 1.25rem; text-align: left; }
+    .form-group label { display: block; margin-bottom: 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .form-control { width: 100%; padding: 0.75rem 1rem; background: #0c1322; border: 1px solid var(--border); border-radius: 0.375rem; color: #fff; }
+    .form-control:focus { outline: none; border-color: var(--primary-light); }
+    footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">🐘 PHP-SECURE SHIELD</div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <a href="index.html" style="color: var(--primary-light); text-decoration: none; font-size: 0.85rem;">🛡️ SECURDIAG ポータル</a>
+      <a href="#contact" class="btn" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">無料ボランティア相談</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="tag">🚨 緊急警告: PHP 8.1以前EOL & CVE-2024-4577対応</div>
+    <h1>昨今のPHPサイトを狙う攻撃から、<br>自社システムと決済を守る。</h1>
+    <p>
+      EC-CUBEの不正改ざん・カード情報漏洩から、Windows環境下のRCE脆弱性まで。<br>
+      ホワイトハッカーが潜在リスクを特定し、そのまま適用できる修正コードと共に納品します。
+    </p>
+
+    <!-- 5分セルフ診断ウィジェット -->
+    <div class="diagnostic-box">
+      <div class="box-title">🔍 5分で判定: 貴社サイトのPHP危険度セルフチェック</div>
+      
+      <label class="check-item">
+        <input type="checkbox" class="risk-check" value="30">
+        <div>
+          <strong>PHP 8.1 以前のバージョンで稼働している（またはバージョン不明）</strong>
+          <p style="font-size:0.8rem; color:var(--text-muted);">※公式セキュリティサポートが終了しており、ゼロデイ脆弱性に無防備です。</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" class="risk-check" value="35">
+        <div>
+          <strong>EC-CUBE（2系/3系/未パッチ4系）または自社決済機能がある</strong>
+          <p style="font-size:0.8rem; color:var(--text-muted);">※決済画面への不正JavaScript注入（フォームジャッキング）被害が急増中。</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" class="risk-check" value="25">
+        <div>
+          <strong>Windowsサーバー（Apache/IIS）上でPHPが動作している</strong>
+          <p style="font-size:0.8rem; color:var(--text-muted);">※CVE-2024-4577 (CVSS 9.8 Critical) のリモートコード実行対象の恐れがあります。</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox" class="risk-check" value="15">
+        <div>
+          <strong>本番環境でエラー時にプログラムの行番号や詳細ログが表示される</strong>
+          <p style="font-size:0.8rem; color:var(--text-muted);">※.envやDB認証情報が外部から容易に特定されるリスクがあります。</p>
+        </div>
+      </label>
+
+      <button type="button" class="btn" style="width:100%; margin-top:0.5rem;" onclick="calcRisk()">危険度スコアを診断する</button>
+
+      <div id="riskResult" class="score-result">
+        <h3 id="riskTitle"></h3>
+        <p id="riskDesc" style="font-size:0.9rem; margin-top:0.5rem;"></p>
+        <a href="#contact" class="btn" style="margin-top:1rem; background:#fff; color:#090d16;">詳細診断・無料事前審査を申し込む</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 脅威一覧 -->
+  <section style="max-width: 1000px; margin: 0 auto; text-align: center;">
+    <h2 style="font-size: 1.8rem; margin-bottom: 1rem;">直ちに対処すべき「昨今のPHP重要脆弱性」</h2>
+    <div class="threat-grid">
+      <div class="threat-card">
+        <div style="color:var(--danger); font-size:1.5rem; margin-bottom:0.5rem;">⚠️ CVSS 9.8</div>
+        <h3>CVE-2024-4577</h3>
+        <p>PHP CGI引数インジェクション。Windows環境で日本語文字コードをすり抜け、認証なしでサーバーが乗っ取られます。</p>
+      </div>
+      <div class="threat-card">
+        <div style="color:var(--warning); font-size:1.5rem; margin-bottom:0.5rem;">💳 漏洩事故多発</div>
+        <h3>EC-CUBE 決済改ざん</h3>
+        <p>購入者のカード情報が外部へ抜き取られる被害。経産省ガイドラインにより年1回の診断が強く推奨されています。</p>
+      </div>
+      <div class="threat-card">
+        <div style="color:var(--primary-light); font-size:1.5rem; margin-bottom:0.5rem;">⏳ サポート終了</div>
+        <h3>PHP 7.4〜8.1 EOL</h3>
+        <p>セキュリティ修正が停止。脆弱性が見つかっても公式パッチが出ないため、コード修正やWAFによる緊急防御が必要です。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- お問い合わせ & ボランティア相談 -->
+  <section class="form-box" id="contact">
+    <h2 style="text-align: center; margin-bottom: 0.5rem;">無償ボランティア相談 & ご質問</h2>
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">
+      ※本活動は非営利のオープンセキュリティプロジェクトです。営業・勧誘は一切行いません。
+    </p>
+
+    <form onsubmit="handleSubmit(event)">
+      <div class="form-group">
+        <label>お名前 / 企業名（任意）</label>
+        <input type="text" class="form-control" placeholder="例: 山田 / 株式会社サンプル">
+      </div>
+      <div class="form-group">
+        <label>ご連絡先メールアドレス *</label>
+        <input type="email" class="form-control" required placeholder="例: your-email@example.com">
+      </div>
+      <div class="form-group">
+        <label>現在のPHP利用環境（概略）</label>
+        <input type="text" class="form-control" placeholder="例: EC-CUBE 4系, Laravel 8, PHP 7.4 など">
+      </div>
+      <div class="form-group">
+        <label>ご相談内容 / 質問</label>
+        <textarea class="form-control" rows="3" placeholder="例: 修正パッチの適用手順について質問したい など"></textarea>
+      </div>
+      <button type="submit" class="btn" style="width:100%; font-size:1rem;">ボランティアチームへ相談を送信する（無料）</button>
+    </form>
+  </section>
+
+  <footer>
+    <p>&copy; 2026 SECURDIAG Open Security Initiative. 代表・発起人: 新川 慎吾</p>
+  </footer>
+
+  <script>
+    function calcRisk() {
+      const checks = document.querySelectorAll('.risk-check');
+      let score = 0;
+      checks.forEach(c => { if(c.checked) score += parseInt(c.value); });
+      const res = document.getElementById('riskResult');
+      const title = document.getElementById('riskTitle');
+      const desc = document.getElementById('riskDesc');
+      res.style.display = 'block';
+      if(score >= 50) {
+        res.className = 'score-result score-high';
+        title.innerText = '【危険度: 高（リスクスコア: ' + score + '/100）】直ちに対策が必要です';
+        desc.innerText = 'サポート終了バージョンまたは重大な既知脆弱性の影響を受けている可能性が極めて高く、不正アクセスやカード情報漏洩のリスクがあります。至急の診断と是正を推奨します。';
+      } else if(score > 0) {
+        res.className = 'score-result score-med';
+        title.innerText = '【危険度: 中（リスクスコア: ' + score + '/100）】潜在的な弱点があります';
+        desc.innerText = '直ちにシステム停止には至らないものの、設定不備やフレームワークの弱点を突かれるリスクがあります。';
+      } else {
+        res.className = 'score-result score-low';
+        title.innerText = '【危険度: 低（良好）】';
+        desc.innerText = '基本的なリスクは低めですが、定期的な脆弱性診断と最新セキュリティパッチの監視を継続してください。';
+      }
+    }
+    function handleSubmit(e) {
+      e.preventDefault();
+      alert("事前審査申し込みを受付いたしました。AI審査エンジンによるドメイン所有権認証プロトコルを開始します。");
+    }
+  </script>
+</body>
+</html>
